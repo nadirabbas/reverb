@@ -38,7 +38,8 @@ class EventsController extends Controller
         }
 
         if ($specific = $payload['specific'] ?? null) {
-            $specific = collect($payload['specific'])->map(fn ($id) => $this->channels->connections()[$id] ?? null)->filter()->toArray() ?? null;
+            $specific = collect($payload['specific'])->map(fn ($id) => $this->channels->connections()[$id] ?? null)->filter()->map(fn ($c) => $c->connection())->toArray() ?? null;
+            unset($payload['specific']);
         }
 
         EventDispatcher::dispatch(
@@ -49,7 +50,7 @@ class EventsController extends Controller
                 'data' => $payload['data'],
             ],
             $except ? $except->connection() : null,
-            $specific
+            $specific ?: null
         );
 
         if (isset($payload['info'])) {
