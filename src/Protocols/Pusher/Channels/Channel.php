@@ -92,11 +92,10 @@ class Channel
     /**
      * Send a message to all connections subscribed to the channel.
      */
-    public function broadcast(array $payload, ?Connection $except = null): void
+    public function broadcast(array $payload, ?Connection $except = null, ?array $specific = null): void
     {
-        if ($except === null) {
+        if ($except === null && $specific === null) {
             $this->broadcastToAll($payload);
-
             return;
         }
 
@@ -105,8 +104,14 @@ class Channel
         Log::info('Broadcasting To', $this->name());
         Log::message($message);
 
+        $specificCollection = collect($specific ?? []);
+
         foreach ($this->connections() as $connection) {
-            if ($except->id() === $connection->id()) {
+            if ($except && ($except->id() === $connection->id())) {
+                continue;
+            }
+
+            if ($specific && !$specificCollection->filter(fn ($c) => $c->id() === $connection->id())->count()) {
                 continue;
             }
 

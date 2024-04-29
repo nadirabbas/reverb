@@ -14,12 +14,12 @@ class EventDispatcher
     /**
      * Dispatch a message to a channel.
      */
-    public static function dispatch(Application $app, array $payload, ?Connection $connection = null): void
+    public static function dispatch(Application $app, array $payload, ?Connection $connection = null, ?array $specific = null): void
     {
         $server = app(ServerProviderManager::class);
 
         if ($server->shouldNotPublishEvents()) {
-            static::dispatchSynchronously($app, $payload, $connection);
+            static::dispatchSynchronously($app, $payload, $connection, $specific);
 
             return;
         }
@@ -34,20 +34,20 @@ class EventDispatcher
     /**
      * Notify all connections subscribed to the given channel.
      */
-    public static function dispatchSynchronously(Application $app, array $payload, ?Connection $connection = null): void
+    public static function dispatchSynchronously(Application $app, array $payload, ?Connection $connection = null, ?array $specific = null): void
     {
         $channels = Arr::wrap($payload['channels'] ?? $payload['channel'] ?? []);
 
         foreach ($channels as $channel) {
             unset($payload['channels']);
 
-            if (! $channel = app(ChannelManager::class)->for($app)->find($channel)) {
+            if (!$channel = app(ChannelManager::class)->for($app)->find($channel)) {
                 continue;
             }
 
             $payload['channel'] = $channel->name();
 
-            $channel->broadcast($payload, $connection);
+            $channel->broadcast($payload, $connection, $specific);
         }
     }
 }
